@@ -20,12 +20,10 @@
 
 // (stolen from Matthew Heironimus @ https://github.com/MHeironimus/ArduinoJoystickLibrary)
 
-#include "G27PedalsShifter.h"
-
-#if defined(_USING_HID)
+#include "G27Dev.h"
 
 #define G27_REPORT_ID 0x03
-#define G27_STATE_SIZE 9
+#define G27_STATE_SIZE 11
 
 static const uint8_t _hidReportDescriptor[] PROGMEM = {
 	// Joystick
@@ -56,14 +54,15 @@ static const uint8_t _hidReportDescriptor[] PROGMEM = {
 	0x09, 0x30,		              //     USAGE (x)
 	0x09, 0x31,		              //     USAGE (y)
 	0x09, 0x32,		              //     USAGE (z)
-	0x95, 0x03,		              //     REPORT_COUNT (3)
+	0x09, 0x33,		              //     USAGE (Rx)
+	0x95, 0x04,		              //     REPORT_COUNT (3)
 	0x81, 0x02,		              //     INPUT (Data,Var,Abs)
 	0xc0,				      //   END_COLLECTION
 
 	0xc0				      // END_COLLECTION
 };
 
-G27_::G27_()
+G27Dev::G27Dev()
 {
 	// Setup HID report structure
 	static HIDSubDescriptor node(_hidReportDescriptor, sizeof(_hidReportDescriptor));
@@ -73,20 +72,21 @@ G27_::G27_()
 	xAxis = 0;
 	yAxis = 0;
 	zAxis = 0;
+	RxAxis = 0;
 	buttons = 0;
 }
 
-void G27_::begin(bool initAutoSendState)
+void G27Dev::begin(bool initAutoSendState)
 {
 	autoSendState = initAutoSendState;
 	sendState();
 }
 
-void G27_::end()
+void G27Dev::end()
 {
 }
 
-void G27_::setButton(uint8_t button, uint8_t value)
+void G27Dev::setButton(uint8_t button, uint8_t value)
 {
 	if (value == 0)
 	{
@@ -97,34 +97,39 @@ void G27_::setButton(uint8_t button, uint8_t value)
 		pressButton(button);
 	}
 }
-void G27_::pressButton(uint8_t button)
+void G27Dev::pressButton(uint8_t button)
 {
 	bitSet(buttons, button);
 	if (autoSendState) sendState();
 }
-void G27_::releaseButton(uint8_t button)
+void G27Dev::releaseButton(uint8_t button)
 {
 	bitClear(buttons, button);
 	if (autoSendState) sendState();
 }
 
-void G27_::setXAxis(uint16_t value)
+void G27Dev::setXAxis(uint16_t value)
 {
 	xAxis = value;
 	if (autoSendState) sendState();
 }
-void G27_::setYAxis(uint16_t value)
+void G27Dev::setYAxis(uint16_t value)
 {
 	yAxis = value;
 	if (autoSendState) sendState();
 }
-void G27_::setZAxis(uint16_t value)
+void G27Dev::setZAxis(uint16_t value)
 {
 	zAxis = value;
 	if (autoSendState) sendState();
 }
+void G27Dev::setRxAxis(uint16_t value)
+{
+	RxAxis = value;
+	if (autoSendState) sendState();
+}
 
-void G27_::sendState()
+void G27Dev::sendState()
 {
 	uint8_t data[G27_STATE_SIZE];
 	uint32_t tmp = buttons;
@@ -151,11 +156,12 @@ void G27_::sendState()
         data[7] = tmp & 0xFF;
         tmp >>=8;
         data[8] = tmp & 0xFF;
+		
+		tmp = RxAxis;
+        data[9] = tmp & 0xFF;
+        tmp >>=8;
+        data[10] = tmp & 0xFF;
 
 	// HID().SendReport(Report number, array of values in same order as HID descriptor, length)
 	HID().SendReport(G27_REPORT_ID, data, G27_STATE_SIZE);
 }
-
-G27_ G27;
-
-#endif
