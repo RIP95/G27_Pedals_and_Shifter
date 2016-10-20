@@ -23,29 +23,24 @@
 #ifndef G27_h
 #define G27_h
 
-#include "HID.h"
-
-#if !defined(_USING_HID)
-
-#warning "Using legacy HID core (non pluggable)"
-
-#else
+#include <HID.h>
 
 //================================================================================
 //================================================================================
 //  G27 (Gamepad)
 
-class G27_
+class G27Dev
 {
 private:
 	bool     autoSendState;
 	uint16_t xAxis;
 	uint16_t yAxis;
 	uint16_t zAxis;
+	uint16_t RxAxis;
 	uint32_t buttons;
 
 public:
-	G27_();
+	G27Dev();
 
 	void begin(bool initAutoSendState = true);
 	void end();
@@ -53,6 +48,7 @@ public:
 	void setXAxis(uint16_t value);
 	void setYAxis(uint16_t value);
 	void setZAxis(uint16_t value);
+	void setRxAxis(uint16_t value);
 
 	void setButton(uint8_t button, uint8_t value);
 	void pressButton(uint8_t button);
@@ -60,7 +56,5 @@ public:
 
 	void sendState();
 };
-extern G27_ G27;
 
-#endif
 #endif
